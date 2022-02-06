@@ -40,29 +40,38 @@
 	 (quants (quantile data))
 	 (iqr (- (third quants) (first quants))))
 
-    (reverse
-     (pairlis '(:mean :median :mode :min :q :max :iqr :outlier-bounds)
-	      (list
-	       (mean data)
-	       (median data)
-	       (mode data)
-	       (reduce #'min data)
-	       quants
-	       (reduce #'max data)
-	       iqr
-	       (over-under (third quants)
-			   (first quants)))))))
+    (format t "~{~A~%~}"
+	    (reverse
+	     (pairlis '(:mean :median :mode :min :q :max :iqr :outlier-bounds)
+		      (list
+		       (mean data)
+		       (median data)
+		       (mode data)
+		       (reduce #'min data)
+		       quants
+		       (reduce #'max data)
+		       iqr
+		       (over-under (third quants)
+				   (first quants))))))))
 
 (defun mean (data)
   (float (/ (reduce #'+ data) (length data))))
 
 ;gross
 (defun mode (data)
-  (let ((values (remove-duplicates data)))
-    (pairlis '(:value :count)
-	     (first (sort (loop for value in values
-				collect (list value (count value data)))
-			  #'> :key #'second)))))
+  (let ((values (remove-duplicates data))
+	modes mode)
+    (setf modes (sort (loop for value in values
+		 collect (list value (count value data)))
+		      #'> :key #'second))
+    (setf mode (second (first modes)))
+    (when (= mode 1)
+      (return-from mode :no-mode))
+     (pairlis '(:value :modes)
+	      (list mode
+		    (mapcar #'first
+			    (remove-if-not (lambda (x)
+					     (= x mode)) modes :key #'second))))))
 
 
 (defun variance (data &optional (p nil))
@@ -80,10 +89,15 @@
   (/ (- value mean) std-dev))
 
 (defun chebyshev (k)
+  (assert (> k 1))
   (- 1 (/ 1 (expt k 2))))
 
-(defun chebyshev-plot (count &optional (step .1))
-  (let ((range (range 1.01 count step)))
+(defun chebyshev-inverse (p)
+  (assert (> 1 p 0))
+  (sqrt (/ 1 (- 1 p))))
+
+(defun chebyshev-plot (std-devs &optional (step .1))
+  (let ((range (range 1.0001 std-devs step)))
     (vgplot:plot range
 		 (mapcar #'chebyshev range))))
 
