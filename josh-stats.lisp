@@ -3,17 +3,16 @@
 (in-package #:josh-stats)
 
 
-(defun median (thing)
-  (let ((length (length thing)))
-    (setf thing (sort thing #'<))
-    (float
-     (if (oddp length)
-	 (nth (floor length 2) thing)
-	 (/ (+ (nth (ceiling length 2) thing)
-	       (nth (floor length 2) thing)) 2)))))
+(defun median (data)
+  (let* ((length (length data))
+	 (center (1- (floor length 2)))
+	 (next (1+ center)))
+    (when (evenp length)
+      (incf next))
+    (mean (subseq data center next))))
 
-(defun quantile (d)
-  (let ((data (sort d #'<)))
+(defun quantile (data)
+  (let ((data (sort data #'<)))
     (list (median (subseq data 0 (floor (length data) 2)))
 	  (median data)
 	  (median (subseq data (ceiling (length data) 2))))))
@@ -42,7 +41,7 @@
 	 (iqr (- (third quants) (first quants))))
 
     (reverse
-     (pairlis '(:mean :median :mode :min :q :max :iqr :under-over)
+     (pairlis '(:mean :median :mode :min :q :max :iqr :outlier-bounds)
 	      (list
 	       (mean data)
 	       (median data)
