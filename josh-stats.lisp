@@ -17,7 +17,7 @@
 	  (median data)
 	  (median (subseq data (ceiling (length data) 2))))))
 
-(defun over-under (q3 q1)
+(defun under-over (q3 q1)
   (let ((iqrr (* 3/2 (- q3 q1))))
     (list (+ q3 iqrr) (- q1 iqrr))))
 
@@ -51,8 +51,7 @@
 		       quants
 		       (reduce #'max data)
 		       iqr
-		       (over-under (third quants)
-				   (first quants))))))))
+		       (under-over (first quants) (third quants))))))))
 
 (defun mean (data)
   (float (/ (reduce #'+ data) (length data))))
