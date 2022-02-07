@@ -104,3 +104,8 @@
   (loop
     for i from start to count by step
     collect i))
+
+(defun explode (value count)
+  (let ((list nil))
+    (dotimes (nah count list)
+      (push value list))))
