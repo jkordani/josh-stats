@@ -109,3 +109,17 @@
   (let ((list nil))
     (dotimes (nah count list)
       (push value list))))
+
+(defun frequency-distribution (data &optional (rel nil))
+  (let ((numbers (make-hash-table))
+	(length (length data))
+	(table nil))
+    (dolist (datum data)
+      (if (null (gethash datum numbers))
+	  (setf (gethash datum numbers) 1)
+	  (incf (gethash datum numbers))))
+    (loop for i being each hash-key in numbers using (hash-value v)
+	  do (push (cons i (if rel
+			       (/ v length)
+			       v)) table))
+    (sort table #'< :key #'car)))
