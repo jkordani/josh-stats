@@ -14,9 +14,9 @@
 
 (defun quantile (data)
   (let ((data (sort data #'<)))
-    (list (median (subseq data 0 (floor (length data) 2)))
+    (list (median (subseq data 0 (ceiling (length data) 2)))
 	  (median data)
-	  (median (subseq data (ceiling (length data) 2))))))
+	  (median (subseq data (floor (length data) 2))))))
 
 (defun under-over (q3 q1)
   (let ((iqrr (* 3/2 (- q3 q1))))
