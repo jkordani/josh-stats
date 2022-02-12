@@ -142,3 +142,15 @@
 		    (when (<= low (car freq) high)
 		      (incf (elt values idx) (cdr freq)))))
     (values lower width bins lowers uppers values)))
+
+(defun ! (n)
+  (let ((sum 1))
+    (dotimes (i n)
+      (setf sum (* sum (1+ i))))
+    sum))
+
+(defun permutations (options count)
+  (/ (! options) (! (- options count))))
+
+(defun combinations (options count)
+  (/ (! options) (* (! (- options count)) (! count))))
