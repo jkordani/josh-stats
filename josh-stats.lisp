@@ -102,7 +102,7 @@
 
 (defun range (start count &optional (step 1))
   (loop
-    for i from start to count by step
+    for i from start to (+ start (* step count)) by step
     collect i))
 
 (defun explode (value count)
