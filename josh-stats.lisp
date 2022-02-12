@@ -123,3 +123,20 @@
 			       (/ v length)
 			       v)) table))
     (sort table #'< :key #'car)))
+
+(defun histogram (data &key bins width (first-upper-delta 1))
+  (let* ((frequencies (frequency-distribution data))
+	 (bins (or bins (length frequencies)))
+	 (lower (apply #'min data))
+	 (width (or width (/ (- (apply #'max data) lower) bins)))
+	 (lowers (range lower bins width))
+	 (uppers (range (- (second lowers) first-upper-delta) bins width))
+	 (values (make-array bins)))
+
+    (loop for low in lowers
+	  for high in uppers
+	  for idx from 0
+	  do (dolist (freq frequencies)
+		    (when (<= low (car freq) high)
+		      (incf (elt values idx) (cdr freq)))))
+    (values lower width bins lowers uppers values)))
