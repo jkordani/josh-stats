@@ -129,10 +129,11 @@
   (let* ((frequencies (frequency-distribution data))
 	 (bins (or bins (length frequencies)))
 	 (lower (apply #'min data))
-	 (width (or width (/ (- (apply #'max data) lower) bins)))
+	 (max-min (/ (- (apply #'max data) lower) bins))
+	 (width (or width (when (integerp (first data)) (ceiling max-min)) max-min))
 	 (lowers (range lower bins width))
 	 (uppers (range (- (second lowers) first-upper-delta) bins width))
-	 (values (make-array bins)))
+	 (values (make-array (1+ bins) :adjustable t :fill-pointer t )))
 
     (loop for low in lowers
 	  for high in uppers
