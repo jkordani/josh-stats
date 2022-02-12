@@ -4,7 +4,8 @@
 
 
 (defun median (data)
-  (let* ((length (length data))
+  (let* ((data (sort data #'<))
+	 (length (length data))
 	 (center (1- (floor length 2)))
 	 (next (1+ center)))
     (when (evenp length)
