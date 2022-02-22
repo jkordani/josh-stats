@@ -154,3 +154,6 @@
 
 (defun combinations (options count)
   (/ (! options) (* (! (- options count)) (! count))))
+
+(defun bdf (wins prob trials)
+  (* (combinations trials wins) (expt prob wins) (expt (- 1 prob) (- trials wins))))
