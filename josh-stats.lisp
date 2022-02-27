@@ -88,10 +88,6 @@
 (defun z-score (value mean std-dev)
   (/ (- value mean) std-dev))
 
-(defun normal-dist (from to value mean std-dev)
-  (- (z-score (min from to) mean std-dev)
-     (z-score (max from to) mean std-dev)))
-
 (defun empirical (&optional (std-dev 0) (mean 0) (value 0))
   (let* ((e1 68/200)
 	 (e2 (- 95/200 e1))
@@ -239,3 +235,19 @@
 	       (* s x))))
       (+ (definite-integral (xterm slope) from to)
 	 (definite-integral (cterm y-int) from to)))))
+
+
+(defun error-function (x &optional (steps 2))
+  (* (/ 2 (sqrt pi))
+     (reduce #'+ (loop for n from 0 to steps
+		       collect (let ((product (/ x (1+ (* 2 n)))))
+				 (dotimes (k n product)
+				   (setf product
+					 (* product
+					    (/ (- (expt x 2))
+					       (1+ k))))))))))
+(defun normcdf (x)
+  (* 1/2 (- 1 (error-function (- (/ x (sqrt 2))) 1000))))
+
+(defun integral-ndf (from to)
+  (definite-integral #'normcdf from to))
