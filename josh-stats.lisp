@@ -249,5 +249,8 @@
 (defun normcdf (x)
   (* 1/2 (- 1 (error-function (- (/ x (sqrt 2))) 1000))))
 
-(defun integral-ndf (from to)
-  (definite-integral #'normcdf from to))
+(defun integral-ndf (from to &optional (mean 0) (std-dev 1))
+  (definite-integral
+      #'normcdf
+      (z-score from mean std-dev)
+    (z-score to mean std-dev)))
