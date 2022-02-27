@@ -88,6 +88,45 @@
 (defun z-score (value mean std-dev)
   (/ (- value mean) std-dev))
 
+(defun normal-dist (from to value mean std-dev)
+  (- (z-score (min from to) mean std-dev)
+     (z-score (max from to) mean std-dev)))
+
+(defun empirical (&optional (std-dev 0) (mean 0) (value 0))
+  (let* ((e1 68/200)
+	 (e2 (- 95/200 e1))
+	 (e3 (- 997/2000 e2 e1))
+	 (e4 (- 1/2 e3 e2 e1))
+	 (std-devs '(-4 -3 -2 -1 0 1 2 3 4))
+	 (z-score (z-score value mean std-dev))
+	 (left-to-right (list e4 e3 e2 e1 e1 e2 e3 e4))
+	 (idx (position (if (<= z-score -4)
+			    -4
+			    (if (<= 4 z-score)
+				4
+				z-score))
+			std-devs))
+	 (dist (mapcar (lambda (x) (+ (* x std-dev) mean))
+	     std-devs)))
+    (values 
+     (mapcar (lambda (x) (float x)) (list e1 e2 e3 e4)) 
+     (maplist (lambda (x) (float (reduce #'+ x)))
+	      left-to-right) 
+     dist
+     idx
+     left-to-right
+     (list  
+      (subseq left-to-right 0 idx)
+      (subseq left-to-right idx)
+      (float
+       (reduce #'+
+	       (subseq left-to-right
+		       0 idx)))
+      (float
+       (reduce #'+
+	       (subseq left-to-right
+		       idx)))))))
+
 (defun chebyshev (k)
   (assert (> k 1))
   (- 1 (/ 1 (expt k 2))))
@@ -157,3 +196,46 @@
 
 (defun bdf (wins prob trials)
   (* (combinations trials wins) (expt prob wins) (expt (- 1 prob) (- trials wins))))
+
+(defun bcdf (wins prob trials)
+  (reduce #'+ (mapcar #'bdf
+		      (range 0 wins)
+		      (explode prob (1+ wins))
+		      (explode trials (1+ wins)))))
+
+(defun expected (values probabilities)
+  (reduce #'+ (mapcar #'* values probabilities)))
+
+(defun pdf-variance (values probabilities)
+  (let ((mean (expected values probabilities)))
+    (reduce #'+ (mapcar (lambda (v p) (* (expt (- v mean) 2) p))
+			values probabilities))))
+
+(defun pdf-std-dev (values probabilities)
+  (sqrt (pdf-variance values probabilities)))
+
+(defun bernoulli (n p)
+  (pairlis '(:mean :variance :std-dev)
+	   (list (* n p) (* n (- 1 p) p) (sqrt (* n (- 1 p) p)))))
+
+(defun pdf-analysis (values probabilities)
+  (pairlis '(:mean :variance :std-dev)
+	   (list (expected values probabilities)
+		 (pdf-variance values probabilities)
+		 (pdf-std-dev values probabilities))))
+
+(defun definite-integral (fn from to)
+  (- (funcall fn to) (funcall fn from)))
+
+(defun integral (xy1 xy2 from to)
+  (let* ((slope (/ (- (second xy1) (second xy2))
+		   (- (first xy1) (first xy2))))
+	 (y-int (- (second xy1) (* slope (first xy1)))))
+    (flet ((xterm (s)
+	     (lambda (x)
+	       (* s 1/2 (expt x 2))))
+	   (cterm (s)
+	     (lambda (x)
+	       (* s x))))
+      (+ (definite-integral (xterm slope) from to)
+	 (definite-integral (cterm y-int) from to)))))
