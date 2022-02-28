@@ -236,21 +236,69 @@
       (+ (definite-integral (xterm slope) from to)
 	 (definite-integral (cterm y-int) from to)))))
 
+(defun error-function-complement (x)
+  (- 1 (error-function x)))
 
-(defun error-function (x &optional (steps 2))
+(defun error-function-inverse-complement (p)
+  (error-function-inverse (- 1 p)))
+
+(defun error-function (x &optional (steps 100))
   (* (/ 2 (sqrt pi))
-     (reduce #'+ (loop for n from 0 to steps
-		       collect (let ((product (/ x (1+ (* 2 n)))))
-				 (dotimes (k n product)
-				   (setf product
-					 (* product
-					    (/ (- (expt x 2))
-					       (1+ k))))))))))
+     (reduce #'+
+	     (loop for n from 0 to steps
+		   collect (let ((product (/ x (1+ (* 2 n)))))
+			     (dotimes (k n product)
+			       (setf product
+				     (* product
+					(/ (- (expt x 2))
+					   (1+ k))))))))))
+
+(defun error-function-inverse (z &optional (steps 100))
+  (let ((c (* z (/ (sqrt pi) 2)))
+	(expansion (c-expand steps)))
+    (reduce #'+
+	    (mapcar (lambda (k ck)
+		      (* (/ ck (1+ (* 2 k)))
+			 (expt c (1+ (* 2 k)))))
+		    (range 0 steps)
+		    (coerce expansion 'list)))))
+
+
 (defun normcdf (x)
-  (* 1/2 (- 1 (error-function (- (/ x (sqrt 2))) 1000))))
+  (* 1/2
+     (error-function-complement
+      (- (/ x (sqrt 2))))))
+
+(defun norminv (prob &optional (mean 0) (std-dev 1))
+  (+ mean (* std-dev
+	     (* (- (sqrt 2))
+		(error-function-inverse-complement
+		 (* 2 prob))))))
 
 (defun integral-ndf (from to &optional (mean 0) (std-dev 1))
-  (definite-integral
-      #'normcdf
-      (z-score from mean std-dev)
-    (z-score to mean std-dev)))
+  (let ((upper (or to (+ mean (* 4 std-dev))))
+	(lower (or from (- mean (* 4 std-dev)))))
+    (definite-integral
+	      #'normcdf
+	      (z-score lower mean std-dev)
+	    (z-score upper mean std-dev))))
+
+(defun ndf (from to n p)
+  (let* ((mean (cdr (assoc :mean (bernoulli n p))))
+	 (std-dev (cdr (assoc :std-dev (bernoulli n p))))
+	 (upper (or to (+ mean (* 4 std-dev))))
+	 (lower (or from (- mean (* 4 std-dev)))))
+    (integral-ndf lower upper mean std-dev)))
+
+(defun c-expand (steps)
+  (let ((cs (make-array steps :element-type '(integer)
+			      :initial-element 0)))
+    (flet ((denom (m) (* (1+ m) (1+ (* 2 m)))))
+      (setf (elt cs 0) 1)
+      (dotimes (k steps)
+	(dotimes (m k)
+	  (incf (elt cs k)
+		(/ (* (elt cs m)
+		      (elt cs (- (1- k) m)))
+		   (denom m)))))
+    cs)))
