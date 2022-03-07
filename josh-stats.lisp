@@ -269,11 +269,12 @@
      (error-function-complement
       (- (/ x (sqrt 2))))))
 
-(defun norminv (prob &optional (mean 0) (std-dev 1))
-  (+ mean (* std-dev
-	     (* (- (sqrt 2))
-		(error-function-inverse-complement
-		 (* 2 prob))))))
+(defun norminv (prob &optional (mean 0) (std-dev 1) (cltm-samples 1))
+  (values (+ mean (* (/ std-dev (sqrt cltm-samples))
+	      (* (- (sqrt 2))
+		 (error-function-inverse-complement
+		  (* 2 prob)))))
+	  (/ std-dev (sqrt cltm-samples))))
 
 (defun integral-ndf (from to &optional (mean 0) (std-dev 1))
   (let ((upper (or to (+ mean (* 4 std-dev))))
@@ -301,4 +302,24 @@
 		(/ (* (elt cs m)
 		      (elt cs (- (1- k) m)))
 		   (denom m)))))
-    cs)))
+      cs)))
+
+(defun central-limit-theorem-means (from to mean std-dev samples)
+  (values
+   (integral-ndf from to mean (/ std-dev (sqrt samples)))
+   (/ std-dev (sqrt samples))))
+
+(defun central-limit-theorem-sums (from to mean std-dev samples)
+  (integral-ndf from to (* mean samples) (* std-dev (sqrt samples))))
+
+(defun cltm (mean std-dev samples)
+  (pairlis '(:mean :std-dev)
+	   (list mean (/ std-dev (sqrt samples)))))
+
+(defun clts (mean std-dev samples)
+  (pairlis '(:mean :std-dev)
+	   (list (* samples mean) (* std-dev (sqrt samples)))))
+
+(defun inv-z-score (z mean std-dev)
+  (+ (* z std-dev) mean))
+
