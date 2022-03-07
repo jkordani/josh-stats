@@ -163,8 +163,8 @@
 (defun histogram (data &key bins width (first-upper-delta 1))
   (let* ((frequencies (frequency-distribution data))
 	 (bins (or bins (length frequencies)))
-	 (lower (apply #'min data))
-	 (max-min (/ (- (apply #'max data) lower) bins))
+	 (lower (reduce #'min data))
+	 (max-min (/ (- (reduce #'max data) lower) bins))
 	 (width (or width (when (integerp (first data)) (ceiling max-min)) max-min))
 	 (lowers (range lower bins width))
 	 (uppers (range (- (second lowers) first-upper-delta) bins width))
@@ -242,7 +242,7 @@
 (defun error-function-inverse-complement (p)
   (error-function-inverse (- 1 p)))
 
-(defun error-function (x &optional (steps 100))
+(defun error-function (x &optional (steps 50))
   (* (/ 2 (sqrt pi))
      (reduce #'+
 	     (loop for n from 0 to steps
